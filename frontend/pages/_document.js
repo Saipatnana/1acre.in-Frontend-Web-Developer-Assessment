@@ -6,7 +6,7 @@ export default function Document() {
       <Head />
       <head>
         <title>1acre.in</title>
-        <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCoDOQyMRswFRDR4wTm8cID877oRCuemYA"></script>
+        <script src={`https://maps.googleapis.com/maps/api/js?key=${process.env.GOOGLE_MAP_API_KEY}`}></script>
       </head>
       <body className="antialiased">
         <Main />

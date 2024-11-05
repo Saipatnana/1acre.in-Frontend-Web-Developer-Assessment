@@ -24,7 +24,7 @@ const containerStyle = {
 function MapComponent() {
   const { isLoaded } = useJsApiLoader({
     id: "google-map-script",
-    googleMapsApiKey: "AIzaSyCoDOQyMRswFRDR4wTm8cID877oRCuemYA",
+    googleMapsApiKey: process.env.GOOGLE_MAP_API_KEY,
   });
 
   const [map, setMap] = useState(null);
