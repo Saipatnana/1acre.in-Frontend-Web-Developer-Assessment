@@ -5,36 +5,70 @@ import ScaleLoader from "react-spinners/ScaleLoader";
 
 // Fetch data function
 export const getData = async (page) => {
-  const response = await axios.get(
-    `https://prod-be.1acre.in/lands/?format=json&page=${page}&page_size=12&seller=211`
-  );
-  return response.data.results; // Ensure you return the correct data structure
+  try {
+    const response = await axios.get(
+      `https://prod-be.1acre.in/lands/?format=json&page=${page}&page_size=12&seller=211`
+    );
+    return response.data.results; // Ensure you return the correct data structure
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      if (error.response) {
+        if (error.response.status === 404) {
+          console.error("Error 404: Not Found", error.response.data);
+          return { error: "Requested data not found. Please check the URL." }; // Return error message
+        } else {
+          console.error("Error:", error.response.status, error.response.data);
+          return { error: "An error occurred while fetching data. Please try again later." }; // Return error message
+        }
+      } else if (error.request) {
+        console.error("No response received:", error.request);
+        return { error: "No response from server. Please check your connection." }; // Return error message
+      } else {
+        console.error("Error in setup:", error.message);
+        return { error: "An error occurred while setting up the request." }; // Return error message
+      }
+    } else {
+      console.error("Unexpected error:", error);
+      return { error: "An unexpected error occurred." }; // Return error message
+    }
+  }
 };
 
 const PropertyGrid = () => {
   const [properties, setProperties] = useState([]);
   const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true); // Initial loading state
+  const [hasMore, setHasMore] = useState(true); // Track if there are more properties to load
+  const [error, setError] = useState(null); // State to hold any error messages
 
   // Fetch properties data
   const fetchProperties = async () => {
     setLoading(true);
+    setError(null); // Reset error state before fetching
     const data = await getData(page);
-    setProperties((prev) => [...prev, ...data]);
-    setLoading(false);
+
+    if (data.error) {
+      setError(data.error); // Set the error message to state
+    } else {
+      setProperties((prev) => [...prev, ...data]); // Append new properties to the existing list
+      if (data.length < 12) {
+        setHasMore(false); // No more properties to load
+      }
+    }
+    setLoading(false); // Reset loading state
   };
 
   // Fetch properties on page change
   useEffect(() => {
-    fetchProperties();
-  }, [page]);
+    fetchProperties(); // Initial fetch on component mount
+  }, [page]); // Fetch when the page changes
 
   // Handle scroll to load more properties
   const handleScroll = () => {
     if (
       window.innerHeight + document.documentElement.scrollTop >=
         document.documentElement.offsetHeight - 5 &&
-      !loading
+      !loading && hasMore
     ) {
       setPage((prev) => prev + 1);
     }
@@ -69,17 +103,18 @@ const PropertyGrid = () => {
       </div>
       {loading && properties.length > 0 && (
         <div className="flex w-full items-center my-4">
-          <div className="flex flex-col items-center  w-full">
-            <ScaleLoader color="#ffde59"/>
+          <div className="flex flex-col items-center w-full">
+            <ScaleLoader color="#ffde59" />
             <p>Loading more properties...</p>
           </div>
         </div>
       )}
+      {error && <div className="block w-full text-center text-red-500">{error}</div>} {/* Display error message if exists */}
       {!loading && properties.length === 0 && (
         <div className="block w-full text-center">No properties found</div>
       )}
-      {!loading && properties.length > 0 && (
-        <div className="block w-full text-center">
+      {!loading && properties.length > 0 && hasMore && (
+        <div className="block w-full text-center my-4">
           Scroll down for more properties...
         </div>
       )}
